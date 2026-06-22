@@ -3,8 +3,8 @@ local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
 local Window = Rayfield:CreateWindow({
-   Name = "MM2 Ultimate Panel v4",
-   LoadingTitle = "Modüller Yükleniyor...",
+   Name = "MM2 Ultimate Panel v5",
+   LoadingTitle = "ESP Güncelleniyor...",
    LoadingSubtitle = "by MM2 Pro",
    ConfigurationSaving = { Enabled = false }
 })
@@ -12,18 +12,37 @@ local Window = Rayfield:CreateWindow({
 local Tab1 = Window:CreateTab("Murderer & Helper")
 local Tab2 = Window:CreateTab("Misc")
 
--- Tab1: Helper Özellikleri
-Tab1:CreateButton({ Name = "Full ESP (Fix)", Callback = function()
-    for _, p in pairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer and p.Character then
-            local h = p.Character:FindFirstChild("Highlight") or Instance.new("Highlight", p.Character)
-            if p.Character:FindFirstChild("Knife") then h.FillColor = Color3.fromRGB(255, 0, 0) -- Murder Kırmızı
-            elseif p.Character:FindFirstChild("Gun") then h.FillColor = Color3.fromRGB(0, 0, 255) -- Sheriff Mavi
-            else h.FillColor = Color3.fromRGB(0, 255, 0) end -- Inno Yeşil
+-- GÜÇLENDİRİLMİŞ ESP (Sürekli Güncellenen)
+local ESPEnabled = false
+Tab1:CreateToggle({ Name = "Full ESP (Sürekli)", CurrentValue = false, Callback = function(Value)
+    ESPEnabled = Value
+    while ESPEnabled do
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                local h = p.Character:FindFirstChild("Highlight") or Instance.new("Highlight", p.Character)
+                h.Adornee = p.Character
+                h.FillTransparency = 0.5
+                h.OutlineTransparency = 0
+                
+                -- Rol Kontrolü
+                if p.Character:FindFirstChild("Knife") then 
+                    h.FillColor = Color3.fromRGB(255, 0, 0) -- Murder Kırmızı
+                elseif p.Character:FindFirstChild("Gun") then 
+                    h.FillColor = Color3.fromRGB(0, 0, 255) -- Sheriff Mavi
+                else 
+                    h.FillColor = Color3.fromRGB(0, 255, 0) -- Inno Yeşil
+                end
+            end
         end
+        wait(1) -- 1 saniyede bir günceller
+    end
+    -- Kapandığında temizle
+    for _, p in pairs(Players:GetPlayers()) do
+        if p.Character and p.Character:FindFirstChild("Highlight") then p.Character.Highlight:Destroy() end
     end
 end})
 
+-- Trigger Bot (Aynı)
 local TriggerBotEnabled = false
 Tab1:CreateToggle({ Name = "Trigger Bot", CurrentValue = false, Callback = function(Value)
     TriggerBotEnabled = Value
@@ -38,7 +57,7 @@ Tab1:CreateToggle({ Name = "Trigger Bot", CurrentValue = false, Callback = funct
     end)
 end})
 
--- Tab2: Misc Özellikleri (Eskileri Korundu)
+-- Misc (Eskileri Korundu)
 local FlingEnabled = false
 Tab2:CreateToggle({ Name = "Touch Fling", CurrentValue = false, Callback = function(Value)
     FlingEnabled = Value
@@ -78,8 +97,4 @@ end})
 
 Tab2:CreateSlider({ Name = "Speed Hack", Range = {16, 100}, Increment = 1, CurrentValue = 16, Callback = function(Value)
     LocalPlayer.Character.Humanoid.WalkSpeed = Value
-end})
-
-Tab2:CreateSlider({ Name = "Jump Power", Range = {50, 300}, Increment = 10, CurrentValue = 50, Callback = function(Value)
-    LocalPlayer.Character.Humanoid.JumpPower = Value
 end})
