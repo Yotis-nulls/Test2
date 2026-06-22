@@ -3,25 +3,17 @@ local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local RunService = game:GetService("RunService")
 
-local Window = Rayfield:CreateWindow({ Name = "MM2 Ultimate Panel v12", LoadingTitle = "Modüller Yükleniyor...", ConfigurationSaving = { Enabled = false } })
+local Window = Rayfield:CreateWindow({
+   Name = "MM2 Ultimate Panel",
+   LoadingTitle = "Modüller Yükleniyor...",
+   LoadingSubtitle = "by MM2 Pro",
+   ConfigurationSaving = { Enabled = false }
+})
 
 local Tab1 = Window:CreateTab("Murderer & Helper")
 local Tab2 = Window:CreateTab("Misc")
 
--- 1. MEVLANA + SPEED (Eski sistemle birleşik)
-local MevlanaEnabled = false
-Tab1:CreateToggle({ Name = "Mevlana + Speed", CurrentValue = false, Callback = function(Value)
-    MevlanaEnabled = Value
-    LocalPlayer.Character.Humanoid.WalkSpeed = Value and 35 or 16
-end})
-
-RunService.RenderStepped:Connect(function()
-    if MevlanaEnabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-        LocalPlayer.Character.HumanoidRootPart.CFrame = LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.Angles(0, math.rad(45), 0)
-    end
-end)
-
--- 2. ESP (Kapanabilen)
+-- 1. ESP
 local ESPEnabled = false
 Tab1:CreateToggle({ Name = "Full ESP", CurrentValue = false, Callback = function(Value)
     ESPEnabled = Value
@@ -37,8 +29,29 @@ RunService.RenderStepped:Connect(function()
         for _, p in pairs(Players:GetPlayers()) do
             if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
                 local h = p.Character:FindFirstChild("Highlight") or Instance.new("Highlight", p.Character)
-                h.FillColor = p.Character:FindFirstChild("Knife") and Color3.fromRGB(255, 0, 0) or Color3.fromRGB(0, 255, 0)
+                h.Adornee = p.Character
+                if p.Character:FindFirstChild("Knife") then h.FillColor = Color3.fromRGB(255, 0, 0)
+                elseif p.Character:FindFirstChild("Gun") then h.FillColor = Color3.fromRGB(0, 0, 255)
+                else h.FillColor = Color3.fromRGB(0, 255, 0) end
             end
+        end
+    end
+end)
+
+-- 2. AIMLOCK (Murderer'a kilitlenme)
+local AimlockEnabled = false
+Tab1:CreateToggle({ Name = "Aimlock (Murderer)", CurrentValue = false, Callback = function(Value) AimlockEnabled = Value end})
+
+RunService.RenderStepped:Connect(function()
+    if AimlockEnabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Gun") then
+        local target = nil
+        for _, v in pairs(Players:GetPlayers()) do
+            if v ~= LocalPlayer and v.Character and v.Character:FindFirstChild("Knife") then
+                target = v.Character.HumanoidRootPart
+            end
+        end
+        if target then
+            workspace.CurrentCamera.CFrame = CFrame.new(workspace.CurrentCamera.CFrame.Position, target.Position)
         end
     end
 end)
@@ -49,7 +62,7 @@ Tab1:CreateButton({ Name = "Grab Gun", Callback = function()
     if gun then LocalPlayer.Character.HumanoidRootPart.CFrame = gun.CFrame end
 end})
 
--- 4. MISC (Fling, Noclip)
+-- 4. MISC
 Tab2:CreateToggle({ Name = "Touch Fling", CurrentValue = false, Callback = function(Value)
     if Value then
         LocalPlayer.Character.HumanoidRootPart.Touched:Connect(function(hit)
@@ -58,10 +71,6 @@ Tab2:CreateToggle({ Name = "Touch Fling", CurrentValue = false, Callback = funct
     end
 end})
 
-Tab2:CreateToggle({ Name = "No Clip", CurrentValue = false, Callback = function(Value)
-    RunService.Stepped:Connect(function() 
-        if Value and LocalPlayer.Character then 
-            for _, v in pairs(LocalPlayer.Character:GetChildren()) do if v:IsA("BasePart") then v.CanCollide = false end end 
-        end 
-    end)
+Tab2:CreateSlider({ Name = "Speed", Range = {16, 100}, Increment = 1, CurrentValue = 16, Callback = function(Value)
+    LocalPlayer.Character.Humanoid.WalkSpeed = Value
 end})
