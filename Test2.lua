@@ -3,8 +3,8 @@ local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
 local Window = Rayfield:CreateWindow({
-   Name = "MM2 Ultimate Panel v5",
-   LoadingTitle = "ESP Güncelleniyor...",
+   Name = "MM2 Ultimate Panel v6",
+   LoadingTitle = "Modüller Yükleniyor...",
    LoadingSubtitle = "by MM2 Pro",
    ConfigurationSaving = { Enabled = false }
 })
@@ -12,7 +12,7 @@ local Window = Rayfield:CreateWindow({
 local Tab1 = Window:CreateTab("Murderer & Helper")
 local Tab2 = Window:CreateTab("Misc")
 
--- GÜÇLENDİRİLMİŞ ESP (Sürekli Güncellenen)
+-- ESP (Sürekli Güncellenen)
 local ESPEnabled = false
 Tab1:CreateToggle({ Name = "Full ESP (Sürekli)", CurrentValue = false, Callback = function(Value)
     ESPEnabled = Value
@@ -24,17 +24,32 @@ Tab1:CreateToggle({ Name = "Full ESP (Sürekli)", CurrentValue = false, Callback
                 h.FillTransparency = 0.5
                 h.OutlineTransparency = 0
                 
-                -- Rol Kontrolü
-                if p.Character:FindFirstChild("Knife") then 
+                -- Rol Kontrolü (En Güncel Yöntem)
+                local backpack = p:FindFirstChildOfClass("Backpack")
+                local characterItems = p.Character:GetChildren()
+                
+                local isMurderer = false
+                local isSheriff = false
+                
+                for _, item in ipairs(characterItems) do
+                    if item.Name == "Knife" or item:IsA("Tool") and item.Name:lower():find("knife") or item:IsA("Tool") and item:FindFirstChild("Handle") and item.Handle:FindFirstChild("TouchInterest") then
+                        -- Bıçak kontrolü (Basitleştirilmiş)
+                        isMurderer = true
+                    elseif item.Name == "Gun" then
+                        isSheriff = true
+                    end
+                end
+                
+                if isMurderer then 
                     h.FillColor = Color3.fromRGB(255, 0, 0) -- Murder Kırmızı
-                elseif p.Character:FindFirstChild("Gun") then 
+                elseif isSheriff then 
                     h.FillColor = Color3.fromRGB(0, 0, 255) -- Sheriff Mavi
                 else 
                     h.FillColor = Color3.fromRGB(0, 255, 0) -- Inno Yeşil
                 end
             end
         end
-        wait(1) -- 1 saniyede bir günceller
+        task.wait(1)
     end
     -- Kapandığında temizle
     for _, p in pairs(Players:GetPlayers()) do
@@ -42,20 +57,40 @@ Tab1:CreateToggle({ Name = "Full ESP (Sürekli)", CurrentValue = false, Callback
     end
 end})
 
--- Trigger Bot (Aynı)
+-- DÜZELTİLMİŞ VE GÜÇLENDİRİLMİŞ TRIGGER BOT
 local TriggerBotEnabled = false
-Tab1:CreateToggle({ Name = "Trigger Bot", CurrentValue = false, Callback = function(Value)
-    TriggerBotEnabled = Value
-    game:GetService("RunService").Heartbeat:Connect(function()
-        if TriggerBotEnabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Gun") then
-            for _, v in pairs(Players:GetPlayers()) do
-                if v.Character and v.Character:FindFirstChild("Knife") and v.Character:FindFirstChild("HumanoidRootPart") then
-                    game:GetService("ReplicatedStorage").Remotes.Shoot:FireServer(v.Character.HumanoidRootPart.Position, v.Character.HumanoidRootPart)
-                end
+Tab1:CreateToggle({ 
+   Name = "Trigger Bot (Otomatik Vur)", 
+   CurrentValue = false, 
+   Callback = function(Value)
+      TriggerBotEnabled = Value
+      
+      if TriggerBotEnabled then
+         task.spawn(function()
+            while TriggerBotEnabled do
+               local lp = LocalPlayer
+               -- Elinde silah olup olmadığını kontrol et
+               if lp.Character and lp.Character:FindFirstChild("Gun") then
+                  for _, v in pairs(Players:GetPlayers()) do
+                     if v ~= lp and v.Character then
+                        -- Bıçağı olan veya Murderer potansiyeli olan kişiyi tespit et
+                        if v.Character:FindFirstChild("Knife") or (v.Backpack and v.Backpack:FindFirstChild("Knife")) then
+                           local rootPart = v.Character:FindFirstChild("HumanoidRootPart")
+                           local shootRemote = game:GetService("ReplicatedStorage"):FindFirstChild("Shoot", true) or game:GetService("ReplicatedStorage"):FindFirstChild("Remotes") and game:GetService("ReplicatedStorage").Remotes:FindFirstChild("Shoot")
+                           
+                           if shootRemote and rootPart then
+                              shootRemote:FireServer(rootPart.Position, rootPart)
+                           end
+                        end
+                     end
+                  end
+               end
+               task.wait(0.1) -- Sunucuyu yormamak için 0.1 saniyelik döngü
             end
-        end
-    end)
-end})
+         end)
+      end
+   end
+})
 
 -- Misc (Eskileri Korundu)
 local FlingEnabled = false
