@@ -5,15 +5,15 @@ local RunService = game:GetService("RunService")
 
 local Window = Rayfield:CreateWindow({
    Name = "MM2 Ultimate Panel",
-   LoadingTitle = "Modüller Yükleniyor...",
-   LoadingSubtitle = "by MM2 Pro",
+   LoadingTitle = "Yükleniyor...",
+   LoadingSubtitle = "",
    ConfigurationSaving = { Enabled = false }
 })
 
 local Tab1 = Window:CreateTab("Murderer & Helper")
 local Tab2 = Window:CreateTab("Misc")
 
--- 1. ESP
+-- 1. ESP (Kapatınca Temizlenen)
 local ESPEnabled = false
 Tab1:CreateToggle({ Name = "Full ESP", CurrentValue = false, Callback = function(Value)
     ESPEnabled = Value
@@ -38,7 +38,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- 2. AIMLOCK (Murderer'a kilitlenme)
+-- 2. AIMLOCK
 local AimlockEnabled = false
 Tab1:CreateToggle({ Name = "Aimlock (Murderer)", CurrentValue = false, Callback = function(Value) AimlockEnabled = Value end})
 
@@ -47,7 +47,7 @@ RunService.RenderStepped:Connect(function()
         local target = nil
         for _, v in pairs(Players:GetPlayers()) do
             if v ~= LocalPlayer and v.Character and v.Character:FindFirstChild("Knife") then
-                target = v.Character.HumanoidRootPart
+                target = v.Character:FindFirstChild("HumanoidRootPart")
             end
         end
         if target then
@@ -62,7 +62,7 @@ Tab1:CreateButton({ Name = "Grab Gun", Callback = function()
     if gun then LocalPlayer.Character.HumanoidRootPart.CFrame = gun.CFrame end
 end})
 
--- 4. MISC
+-- 4. MISC (TÜMÜ)
 Tab2:CreateToggle({ Name = "Touch Fling", CurrentValue = false, Callback = function(Value)
     if Value then
         LocalPlayer.Character.HumanoidRootPart.Touched:Connect(function(hit)
@@ -71,6 +71,19 @@ Tab2:CreateToggle({ Name = "Touch Fling", CurrentValue = false, Callback = funct
     end
 end})
 
-Tab2:CreateSlider({ Name = "Speed", Range = {16, 100}, Increment = 1, CurrentValue = 16, Callback = function(Value)
+Tab2:CreateToggle({ Name = "No Clip", CurrentValue = false, Callback = function(Value)
+    local conn
+    if Value then
+        conn = RunService.Stepped:Connect(function()
+            if LocalPlayer.Character then
+                for _, v in pairs(LocalPlayer.Character:GetChildren()) do if v:IsA("BasePart") then v.CanCollide = false end end
+            end
+        end)
+    else
+        if conn then conn:Disconnect() end
+    end
+end})
+
+Tab2:CreateSlider({ Name = "Speed Hack", Range = {16, 100}, Increment = 1, CurrentValue = 16, Callback = function(Value)
     LocalPlayer.Character.Humanoid.WalkSpeed = Value
 end})
